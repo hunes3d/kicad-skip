@@ -6,6 +6,8 @@ Created on Jan 29, 2024
 '''
 import re
 import copy
+import uuid
+from sexpdata import Symbol as SexpSymbol
 from skip.property import ElementWithPropertiesWrapper
 from skip.collection import NamedElementCollection
 from skip.sexp.parser import ParsedValue
@@ -176,6 +178,62 @@ class Symbol(SymbolBase):
     def __init__(self, pv:ParsedValue):
         super().__init__(pv)
         self._sympins_cont_cache = None 
+    
+    @classmethod
+    def from_lib(cls, schematic, lib_id:str, reference:str='U?', 
+                 at_x:float=0, at_y:float=0, unit:int=1, 
+                 in_bom:bool=True, on_board:bool=True, dnp:bool=False):
+        '''
+            Create a new symbol from a library symbol.
+            
+            Args:
+                schematic: The schematic object to add the symbol to
+                lib_id: The library ID (e.g., "Device:C_Small", "power:GND")
+                reference: The reference designator (default: "U?")
+                at_x: X coordinate (default: 0)
+                at_y: Y coordinate (default: 0)
+                unit: Unit number for multi-unit symbols (default: 1)
+                in_bom: Include in BOM (default: True)
+                on_board: Include on board (default: True)
+                dnp: Do not populate (default: False)
+                
+            Returns:
+                A new Symbol instance
+                
+            Example:
+                >>> new_cap = Symbol.from_lib(sch, "Device:C_Small", "C1", 100, 100)
+                >>> new_gnd = Symbol.from_lib(sch, "power:GND", "GND", 50, 50)
+        '''
+        # Verify the lib_id exists in the schematic
+        if hasattr(schematic, 'lib_symbols') and lib_id not in schematic.lib_symbols:
+            raise ValueError(f"Library symbol '{lib_id}' not found in schematic. "
+                           f"Available symbols: {list(schematic.lib_symbols._libsyms_by_id.keys())}")
+        
+        # Create the minimal symbol structure
+        new_uuid = str(uuid.uuid4())
+        
+        symbol_data = [
+            SexpSymbol('symbol'),
+            [SexpSymbol('lib_id'), lib_id],
+            [SexpSymbol('at'), at_x, at_y, 0],
+            [SexpSymbol('unit'), unit],
+            [SexpSymbol('in_bom'), SexpSymbol('yes' if in_bom else 'no')],
+            [SexpSymbol('on_board'), SexpSymbol('yes' if on_board else 'no')],
+            [SexpSymbol('dnp'), SexpSymbol('yes' if dnp else 'no')],
+            [SexpSymbol('uuid'), new_uuid],
+            [SexpSymbol('property'), 'Reference', reference, 
+             [SexpSymbol('at'), at_x, at_y, 0],
+             [SexpSymbol('effects'), [SexpSymbol('font'), [SexpSymbol('size'), 1.27, 1.27]]]],
+            [SexpSymbol('property'), 'Value', lib_id.split(':')[-1] if ':' in lib_id else lib_id,
+             [SexpSymbol('at'), at_x, at_y + 2.54, 0],
+             [SexpSymbol('effects'), [SexpSymbol('font'), [SexpSymbol('size'), 1.27, 1.27]]]],
+        ]
+        
+        # Create the new symbol using the schematic's method
+        new_symbol = schematic.new_from_list(symbol_data)
+        wrapped_symbol = schematic.wrap(new_symbol)
+        
+        return wrapped_symbol
         
     @property 
     def Reference(self):
