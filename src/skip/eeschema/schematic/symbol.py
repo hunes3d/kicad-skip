@@ -328,6 +328,76 @@ class Symbol(SymbolBase):
         self._sympins_cont_cache = SymbolPinCollection(self, pseudoPinsList, lambda sp: sp.number if sp.name == '~' else sp.name)
             
         return self._sympins_cont_cache
+    
+    def get_pin_locations(self):
+        '''
+            Get all pin locations for this symbol as a dictionary.
+            
+            Returns a dict mapping pin identifiers to their absolute (x, y) coordinates.
+            Useful for programmatic wiring and component placement in your kaicad project.
+            
+            Returns:
+                dict: Maps pin number/name to (x, y) tuple coordinates
+                
+            Example:
+                >>> locations = symbol.get_pin_locations()
+                >>> locations
+                {'1': (100.0, 50.0), '2': (100.0, 52.54), 'VIN': (100.0, 50.0)}
+                
+                >>> # Use with wire creation
+                >>> wire = sch.wire.new()
+                >>> wire.start_at(symbol.get_pin_locations()['VIN'])
+        '''
+        locations = {}
+        for pin in self.pin:
+            loc = pin.location
+            coord = (loc.x, loc.y)
+            # Add by number
+            locations[pin.number] = coord
+            # Add by name if not generic
+            if pin.name and pin.name != '~':
+                locations[pin.name] = coord
+        return locations
+    
+    def get_pin_by_name(self, name:str):
+        '''
+            Get a pin by its name (e.g., 'VIN', 'GND', 'EN').
+            
+            Args:
+                name: The pin name to search for
+                
+            Returns:
+                SymbolPin object if found, None otherwise
+                
+            Example:
+                >>> vin_pin = symbol.get_pin_by_name('VIN')
+                >>> vin_pin.location
+                <at [100.0, 50.0, 0]>
+        '''
+        for pin in self.pin:
+            if pin.name == name:
+                return pin
+        return None
+    
+    def get_pin_by_number(self, number:str):
+        '''
+            Get a pin by its number (e.g., '1', '2', '14').
+            
+            Args:
+                number: The pin number to search for (as string)
+                
+            Returns:
+                SymbolPin object if found, None otherwise
+                
+            Example:
+                >>> pin1 = symbol.get_pin_by_number('1')
+                >>> pin1.location
+                <at [100.0, 50.0, 0]>
+        '''
+        for pin in self.pin:
+            if pin.number == number:
+                return pin
+        return None
             
     
     @property 
