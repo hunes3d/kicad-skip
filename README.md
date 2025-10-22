@@ -933,8 +933,6 @@ wire.start_at(pin1.location)
 
 **Note:** The original library already supported pin locations via `symbol.pin.PIN_NAME.location`, but these new helper methods make it more convenient for programmatic access, especially useful for the kaicad project's automated wiring features.
 
-**For detailed documentation on pin support including usage examples, see [PIN_LOCATION_SUPPORT.md](PIN_LOCATION_SUPPORT.md).**
-
 ---
 
 ## Credits and License
@@ -945,7 +943,5 @@ wire.start_at(pin1.location)
 
 **This Fork:** https://github.com/hunes3d/kicad-skip
 
-2024-04-04
-Pat Deegan 
-
-
+22/10/2025
+Gunes Yilmaz
