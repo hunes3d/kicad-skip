@@ -1,5 +1,8 @@
 # kicad skip: S-expression kicad file python parser
 
+> **Note:** This is a fork of the original [kicad-skip](https://github.com/psychogenic/kicad-skip) library by Pat Deegan.
+> See the [Fork Enhancements](#fork-enhancements) section below for details on what's different in this fork.
+
 Copyright &copy; 2024 Pat Deegan, [psychogenic.com](https://psychogenic.com/)
 
 This library lets you manipulate kicad schematic (and other)  _source_ _files_  with Python, simply.
@@ -10,6 +13,8 @@ efficient and enjoyable.
 
 ## Main features
 
+   * **[Fork Enhancements](#fork-enhancements):** New `Symbol.from_lib()` method for programmatic symbol creation, plus convenient property setters for `Reference` and `Value`
+   
    * Explore, modify and create elements of a schematic or PCB using Python
    
    * Access to every bit of the source file using a common API
@@ -828,7 +833,115 @@ You can do these on individual pins, or on a symbol as a whole:
 
 That's it for now. Explore a schematic you know in the console, let me know how it goes and have fun.
 
-2024-04-04
-Pat Deegan 
+## Fork Enhancements
 
+This fork includes the following enhancements beyond the original [kicad-skip](https://github.com/psychogenic/kicad-skip) by Pat Deegan:
 
+### Symbol.from_lib() Method
+
+A new class method `Symbol.from_lib()` has been added to create symbols from library definitions programmatically.
+
+**Usage:**
+```python
+from skip.eeschema.schematic import Schematic, Symbol
+
+sch = Schematic('my_schematic.kicad_sch')
+
+# Create a new capacitor from the Device library
+new_cap = Symbol.from_lib(sch, 'Device:C_Small', 'C99', 100, 100)
+
+# Create a GND symbol
+new_gnd = Symbol.from_lib(sch, 'power:GND', '#PWR099', 100, 120)
+
+# All parameters
+new_symbol = Symbol.from_lib(
+    schematic=sch,
+    lib_id='Device:R_Small',      # Library symbol ID
+    reference='R99',               # Reference designator
+    at_x=150,                      # X coordinate
+    at_y=150,                      # Y coordinate  
+    unit=1,                        # Unit number (for multi-unit symbols)
+    in_bom=True,                   # Include in BOM
+    on_board=True,                 # Place on board
+    dnp=False                      # Do Not Populate flag
+)
+```
+
+**Key Features:**
+- Creates properly structured symbols with UUID, properties, and positioning
+- Validates that the lib_id exists in the schematic's library symbols
+- **Automatically adds the symbol to `schematic.symbol` collection** so it appears immediately in iterations without needing to save/reload
+- Returns a fully wrapped Symbol instance ready to use
+
+### Property Setters for Reference and Value
+
+Convenient property setters have been added for `Symbol.Reference` and `Symbol.Value` to provide a more intuitive API.
+
+**Before (still works):**
+```python
+symbol.property.Reference.value = 'C100'
+symbol.property.Value.value = '10uF'
+```
+
+**Now (cleaner syntax):**
+```python
+symbol.Reference = 'C100'
+symbol.Value = '10uF'
+```
+
+**Getters remain unchanged:**
+```python
+ref = symbol.Reference         # Returns PropertyString object
+ref_value = symbol.Reference.value  # Returns the string value
+```
+
+These enhancements make the library more intuitive for programmatic schematic creation and modification workflows.
+
+### Pin Location Helper Methods
+
+Added convenient methods to access pin coordinates for multi-pin components (ICs, connectors, etc.):
+
+**get_pin_locations()** - Returns all pins with their absolute coordinates:
+```python
+# Get all pin locations as a dictionary
+locations = symbol.get_pin_locations()
+# {'1': (100.0, 50.0), '2': (100.0, 52.54), 'VIN': (100.0, 50.0), 'GND': (100.0, 52.54)}
+
+# Use for programmatic wiring
+wire = sch.wire.new()
+wire.start_at(locations['VIN'])
+wire.end_at(other_symbol.get_pin_locations()['3'])
+```
+
+**get_pin_by_name(name)** - Find a pin by its name:
+```python
+vin_pin = symbol.get_pin_by_name('VIN')
+print(f"VIN is at: {vin_pin.location.x}, {vin_pin.location.y}")
+```
+
+**get_pin_by_number(number)** - Find a pin by its number:
+```python
+pin1 = symbol.get_pin_by_number('1')
+wire.start_at(pin1.location)
+```
+
+**How It Works:**
+- Pin coordinates are calculated from library symbol definitions embedded in the schematic's `lib_symbols` section
+- Works for **all** component types: resistors, capacitors, ICs, connectors, etc.
+- Handles symbol rotation, mirroring, and multi-unit components
+- Returns absolute coordinates ready for wiring operations
+
+**Note:** The original library already supported pin locations via `symbol.pin.PIN_NAME.location`, but these new helper methods make it more convenient for programmatic access, especially useful for the kaicad project's automated wiring features.
+
+---
+
+## Credits and License
+
+**Original Author:** Pat Deegan  
+**Original Repository:** https://github.com/psychogenic/kicad-skip  
+**Copyright:** &copy; 2024 Pat Deegan, [psychogenic.com](https://psychogenic.com/)
+
+**This Fork:** https://github.com/hunes3d/kicad-skip
+
+22/10/2025
+Gunes Yilmaz
