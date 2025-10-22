@@ -897,6 +897,42 @@ ref_value = symbol.Reference.value  # Returns the string value
 
 These enhancements make the library more intuitive for programmatic schematic creation and modification workflows.
 
+### Pin Location Helper Methods
+
+Added convenient methods to access pin coordinates for multi-pin components (ICs, connectors, etc.):
+
+**get_pin_locations()** - Returns all pins with their absolute coordinates:
+```python
+# Get all pin locations as a dictionary
+locations = symbol.get_pin_locations()
+# {'1': (100.0, 50.0), '2': (100.0, 52.54), 'VIN': (100.0, 50.0), 'GND': (100.0, 52.54)}
+
+# Use for programmatic wiring
+wire = sch.wire.new()
+wire.start_at(locations['VIN'])
+wire.end_at(other_symbol.get_pin_locations()['3'])
+```
+
+**get_pin_by_name(name)** - Find a pin by its name:
+```python
+vin_pin = symbol.get_pin_by_name('VIN')
+print(f"VIN is at: {vin_pin.location.x}, {vin_pin.location.y}")
+```
+
+**get_pin_by_number(number)** - Find a pin by its number:
+```python
+pin1 = symbol.get_pin_by_number('1')
+wire.start_at(pin1.location)
+```
+
+**How It Works:**
+- Pin coordinates are calculated from library symbol definitions embedded in the schematic's `lib_symbols` section
+- Works for **all** component types: resistors, capacitors, ICs, connectors, etc.
+- Handles symbol rotation, mirroring, and multi-unit components
+- Returns absolute coordinates ready for wiring operations
+
+**Note:** The original library already supported pin locations via `symbol.pin.PIN_NAME.location`, but these new helper methods make it more convenient for programmatic access, especially useful for the kaicad project's automated wiring features.
+
 ---
 
 ## Credits and License
@@ -907,7 +943,5 @@ These enhancements make the library more intuitive for programmatic schematic cr
 
 **This Fork:** https://github.com/hunes3d/kicad-skip
 
-2024-04-04
-Pat Deegan 
-
-
+22/10/2025
+Gunes Yilmaz
