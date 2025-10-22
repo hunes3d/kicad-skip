@@ -233,15 +233,31 @@ class Symbol(SymbolBase):
         new_symbol = schematic.new_from_list(symbol_data)
         wrapped_symbol = schematic.wrap(new_symbol)
         
+        # Add the symbol to the schematic's symbol collection
+        # so it appears immediately in schematic.symbol iteration
+        if hasattr(schematic, 'symbol'):
+            schematic.symbol.append(wrapped_symbol)
+        
         return wrapped_symbol
         
     @property 
     def Reference(self):
-        return self.property.Reference 
+        return self.property.Reference
+    
+    @Reference.setter
+    def Reference(self, value:str):
+        '''Set the Reference property value'''
+        self.property.Reference.value = value 
     
     @property
     def Value(self):
         return self.property.Value
+    
+    @Value.setter
+    def Value(self, value:str):
+        '''Set the Value property value'''
+        self.property.Value.value = value
+        
     @property 
     def allReferences(self):
         return self.getElementsByEntityType('reference')
